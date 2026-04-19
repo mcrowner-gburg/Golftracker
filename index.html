@@ -320,6 +320,7 @@
   .bet-btn.poley-minus.active { background: rgba(192,57,43,0.25); border-color: var(--red); color: #e87070; }
   .bet-btn.birdie.active { background: rgba(100,160,255,0.2); border-color: #64a0ff; color: #90bfff; }
   .bet-btn.eagle.active { background: rgba(180,100,255,0.2); border-color: #b464ff; color: #d090ff; }
+  .bet-btn.thehole.active { background: rgba(201,168,76,0.3); border-color: var(--gold); color: var(--gold); }
 
   #scoreboard { display: none; max-width: 520px; margin: 0 auto; padding: 16px 14px; }
 
@@ -342,7 +343,7 @@
 
   .score-table-head {
     display: grid;
-    grid-template-columns: 1fr repeat(8, 40px) 50px;
+    grid-template-columns: 1fr repeat(9, 40px) 50px;
     gap: 0;
     background: rgba(201,168,76,0.15);
     padding: 8px 12px;
@@ -361,7 +362,7 @@
 
   .score-row {
     display: grid;
-    grid-template-columns: 1fr repeat(8, 40px) 50px;
+    grid-template-columns: 1fr repeat(9, 40px) 50px;
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     align-items: center;
@@ -500,6 +501,36 @@
   .btn-new-game:hover { background: rgba(192,57,43,0.1); }
 
   .hidden { display: none !important; }
+
+  .resume-banner {
+    background: linear-gradient(135deg, rgba(74,171,109,0.2) 0%, rgba(45,110,71,0.2) 100%);
+    border: 1.5px solid var(--fairway);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .resume-banner-text { flex: 1; }
+  .resume-banner-text strong { display: block; font-size: 14px; color: var(--cream); margin-bottom: 2px; }
+  .resume-banner-text small { font-size: 11px; color: rgba(245,240,232,0.5); }
+
+  .btn-resume {
+    background: var(--fairway);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 9px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -513,6 +544,14 @@
 </header>
 
 <div id="setup">
+  <div class="resume-banner hidden" id="resumeBanner">
+    <div class="resume-banner-text">
+      <strong id="resumeNames"></strong>
+      <small id="resumeDetails"></small>
+    </div>
+    <button class="btn-resume" onclick="resumeGame()">Resume</button>
+  </div>
+
   <p class="section-label">Players</p>
   <div class="player-inputs" id="playerInputs">
     <div class="player-row">
@@ -564,6 +603,7 @@
     <span class="legend-item">⚠️ Poley -1</span>
     <span class="legend-item">🐦 Birdie $2</span>
     <span class="legend-item">🦅 Eagle $5</span>
+    <span class="legend-item">⭐ The Hole</span>
     <span class="legend-item" style="margin-left:auto;font-size:10px;color:rgba(201,168,76,0.6);">$1 each</span>
   </div>
 
@@ -586,6 +626,7 @@
       <span>🎯−</span>
       <span>🐦</span>
       <span>🦅</span>
+      <span>⭐</span>
       <span>Total</span>
     </div>
     <div id="scoreRows"></div>
@@ -621,6 +662,7 @@ const BETS = [
   { key: 'poley_minus', icon: '⚠️', label: 'Poley -1',  cls: 'poley-minus', value: -1, tip: 'Three putt from outside the pole length' },
   { key: 'birdie',      icon: '🐦', label: 'Birdie',    cls: 'birdie',      value:  2, tip: 'Birdie — $2' },
   { key: 'eagle',       icon: '🦅', label: 'Eagle',     cls: 'eagle',       value:  5, tip: 'Eagle — $5' },
+  { key: 'thehole',     icon: '⭐', label: 'The Hole',  cls: 'thehole',     value:  1, tip: 'Win the hole — $1' },
 ];
 
 let players = [];
@@ -628,6 +670,50 @@ let totalHoles = 9;
 let currentHole = 0;
 let scores = [];
 let gameActive = false;
+
+const STORAGE_KEY = 'golf_tracker_state';
+
+function saveState() {
+  if (!gameActive) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, scores, currentHole, totalHoles }));
+}
+
+function clearState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+function checkForSavedGame() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    if (!state.players || !state.scores) return;
+    document.getElementById('resumeNames').textContent = state.players.join(', ');
+    document.getElementById('resumeDetails').textContent = `${state.totalHoles}-hole round · hole ${state.currentHole + 1}`;
+    document.getElementById('resumeBanner')._savedState = state;
+    document.getElementById('resumeBanner').classList.remove('hidden');
+  } catch (e) {
+    clearState();
+  }
+}
+
+function resumeGame() {
+  const state = document.getElementById('resumeBanner')._savedState;
+  players = state.players;
+  scores = state.scores;
+  currentHole = state.currentHole;
+  totalHoles = state.totalHoles;
+  gameActive = true;
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('tabBar').classList.remove('hidden');
+
+  buildHoleDots();
+  renderHole();
+}
+
+document.addEventListener('DOMContentLoaded', checkForSavedGame);
 
 function setHoles(n) {
   totalHoles = n;
@@ -679,6 +765,7 @@ function startGame() {
   document.getElementById('game').style.display = 'block';
   document.getElementById('tabBar').classList.remove('hidden');
 
+  saveState();
   buildHoleDots();
   renderHole();
 }
@@ -690,7 +777,7 @@ function buildHoleDots() {
     const dot = document.createElement('div');
     dot.className = 'hole-dot' + (h === currentHole ? ' active' : '');
     dot.textContent = h + 1;
-    dot.onclick = () => { currentHole = h; renderHole(); };
+    dot.onclick = () => { currentHole = h; saveState(); renderHole(); };
     container.appendChild(dot);
   }
 }
@@ -746,11 +833,13 @@ function renderHole() {
 
 function toggleBet(playerIdx, betKey) {
   scores[playerIdx][currentHole][betKey] = !scores[playerIdx][currentHole][betKey];
+  saveState();
   renderHole();
 }
 
 function changeHole(dir) {
   currentHole = Math.max(0, Math.min(totalHoles - 1, currentHole + dir));
+  saveState();
   renderHole();
 }
 
@@ -845,6 +934,7 @@ function showGame() {
 
 function newGame() {
   if (!confirm('Start a new game? Current scores will be lost.')) return;
+  clearState();
   gameActive = false;
   document.getElementById('scoreboard').style.display = 'none';
   document.getElementById('setup').style.display = 'block';
