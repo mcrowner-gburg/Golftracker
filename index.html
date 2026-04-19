@@ -318,6 +318,8 @@
   .bet-btn.greenie.active { background: rgba(74,171,109,0.25); border-color: var(--fairway); color: #6dca8f; }
   .bet-btn.poley.active { background: rgba(201,168,76,0.25); border-color: var(--gold); color: #e8c96a; }
   .bet-btn.poley-minus.active { background: rgba(192,57,43,0.25); border-color: var(--red); color: #e87070; }
+  .bet-btn.birdie.active { background: rgba(100,160,255,0.2); border-color: #64a0ff; color: #90bfff; }
+  .bet-btn.eagle.active { background: rgba(180,100,255,0.2); border-color: #b464ff; color: #d090ff; }
 
   #scoreboard { display: none; max-width: 520px; margin: 0 auto; padding: 16px 14px; }
 
@@ -340,7 +342,7 @@
 
   .score-table-head {
     display: grid;
-    grid-template-columns: 1fr repeat(6, 40px) 50px;
+    grid-template-columns: 1fr repeat(8, 40px) 50px;
     gap: 0;
     background: rgba(201,168,76,0.15);
     padding: 8px 12px;
@@ -359,7 +361,7 @@
 
   .score-row {
     display: grid;
-    grid-template-columns: 1fr repeat(6, 40px) 50px;
+    grid-template-columns: 1fr repeat(8, 40px) 50px;
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     align-items: center;
@@ -560,6 +562,8 @@
     <span class="legend-item">🟢 Greenie</span>
     <span class="legend-item">🎯 Poley +1</span>
     <span class="legend-item">⚠️ Poley -1</span>
+    <span class="legend-item">🐦 Birdie $2</span>
+    <span class="legend-item">🦅 Eagle $5</span>
     <span class="legend-item" style="margin-left:auto;font-size:10px;color:rgba(201,168,76,0.6);">$1 each</span>
   </div>
 
@@ -580,6 +584,8 @@
       <span>🟢</span>
       <span>🎯+</span>
       <span>🎯−</span>
+      <span>🐦</span>
+      <span>🦅</span>
       <span>Total</span>
     </div>
     <div id="scoreRows"></div>
@@ -613,6 +619,8 @@ const BETS = [
   { key: 'greenie',     icon: '🟢', label: 'Greenie',   cls: 'greenie',     value:  1, tip: 'Closest to pin on a par 3' },
   { key: 'poley_plus',  icon: '🎯', label: 'Poley +1',  cls: 'poley',       value:  1, tip: 'One putt from outside the pole length' },
   { key: 'poley_minus', icon: '⚠️', label: 'Poley -1',  cls: 'poley-minus', value: -1, tip: 'Three putt from outside the pole length' },
+  { key: 'birdie',      icon: '🐦', label: 'Birdie',    cls: 'birdie',      value:  2, tip: 'Birdie — $2' },
+  { key: 'eagle',       icon: '🦅', label: 'Eagle',     cls: 'eagle',       value:  5, tip: 'Eagle — $5' },
 ];
 
 let players = [];
