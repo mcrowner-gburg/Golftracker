@@ -316,7 +316,8 @@
   .bet-btn.splashie.active { background: rgba(58,123,213,0.25); border-color: var(--water); color: #7ab8f5; }
   .bet-btn.sandie.active { background: rgba(232,213,163,0.2); border-color: var(--sand); color: #d4b96e; }
   .bet-btn.greenie.active { background: rgba(74,171,109,0.25); border-color: var(--fairway); color: #6dca8f; }
-  .bet-btn.polie.active { background: rgba(201,168,76,0.25); border-color: var(--gold); color: #e8c96a; }
+  .bet-btn.poley.active { background: rgba(201,168,76,0.25); border-color: var(--gold); color: #e8c96a; }
+  .bet-btn.poley-minus.active { background: rgba(192,57,43,0.25); border-color: var(--red); color: #e87070; }
 
   #scoreboard { display: none; max-width: 520px; margin: 0 auto; padding: 16px 14px; }
 
@@ -339,7 +340,7 @@
 
   .score-table-head {
     display: grid;
-    grid-template-columns: 1fr repeat(5, 40px) 50px;
+    grid-template-columns: 1fr repeat(6, 40px) 50px;
     gap: 0;
     background: rgba(201,168,76,0.15);
     padding: 8px 12px;
@@ -358,7 +359,7 @@
 
   .score-row {
     display: grid;
-    grid-template-columns: 1fr repeat(5, 40px) 50px;
+    grid-template-columns: 1fr repeat(6, 40px) 50px;
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     align-items: center;
@@ -557,7 +558,8 @@
     <span class="legend-item">💦 Splashie</span>
     <span class="legend-item">⛱️ Sandie</span>
     <span class="legend-item">🟢 Greenie</span>
-    <span class="legend-item">🎯 Polie</span>
+    <span class="legend-item">🎯 Poley +1</span>
+    <span class="legend-item">⚠️ Poley -1</span>
     <span class="legend-item" style="margin-left:auto;font-size:10px;color:rgba(201,168,76,0.6);">$1 each</span>
   </div>
 
@@ -576,7 +578,8 @@
       <span>💦</span>
       <span>⛱️</span>
       <span>🟢</span>
-      <span>🎯</span>
+      <span>🎯+</span>
+      <span>🎯−</span>
       <span>Total</span>
     </div>
     <div id="scoreRows"></div>
@@ -604,11 +607,12 @@
 
 <script>
 const BETS = [
-  { key: 'barkie',   icon: '🐶', label: 'Barkie',   cls: 'barkie',   tip: 'Par despite a tree hit' },
-  { key: 'splashie', icon: '💦', label: 'Splashie', cls: 'splashie', tip: 'Par after a water shot' },
-  { key: 'sandie',   icon: '⛱️', label: 'Sandie',   cls: 'sandie',   tip: 'Par after a bunker shot' },
-  { key: 'greenie',  icon: '🟢', label: 'Greenie',  cls: 'greenie',  tip: 'Closest to pin on a par 3' },
-  { key: 'polie',    icon: '🎯', label: 'Polie',    cls: 'polie',    tip: 'Hole out from off the green' },
+  { key: 'barkie',      icon: '🐶', label: 'Barkie',    cls: 'barkie',      value:  1, tip: 'Up and down despite a tree hit' },
+  { key: 'splashie',    icon: '💦', label: 'Splashie',  cls: 'splashie',    value:  1, tip: 'Up and down after a water shot' },
+  { key: 'sandie',      icon: '⛱️', label: 'Sandie',    cls: 'sandie',      value:  1, tip: 'Up and down after a bunker shot' },
+  { key: 'greenie',     icon: '🟢', label: 'Greenie',   cls: 'greenie',     value:  1, tip: 'Closest to pin on a par 3' },
+  { key: 'poley_plus',  icon: '🎯', label: 'Poley +1',  cls: 'poley',       value:  1, tip: 'One putt from outside the pole length' },
+  { key: 'poley_minus', icon: '⚠️', label: 'Poley -1',  cls: 'poley-minus', value: -1, tip: 'Three putt from outside the pole length' },
 ];
 
 let players = [];
@@ -706,14 +710,14 @@ function renderHole() {
 
   players.forEach((name, pi) => {
     const holeScore = scores[pi][currentHole];
-    const earned = BETS.filter(b => holeScore[b.key]).length;
+    const earned = BETS.reduce((sum, b) => holeScore[b.key] ? sum + b.value : sum, 0);
 
     const card = document.createElement('div');
     card.className = 'player-card';
     card.innerHTML = `
       <div class="player-card-header">
         <div class="player-name-display">${name}</div>
-        <div class="player-hole-total">${earned > 0 ? `+$${earned}` : '–'}</div>
+        <div class="player-hole-total">${earned > 0 ? `+$${earned}` : earned < 0 ? `-$${Math.abs(earned)}` : '–'}</div>
       </div>
       <div class="bets-row">
         ${BETS.map(b => `
@@ -752,7 +756,7 @@ function getTotals() {
         if (scores[pi][h][b.key]) count++;
       }
       totals[b.key] = count;
-      grand += count;
+      grand += count * b.value;
     });
     totals.grand = grand;
     return totals;
@@ -797,8 +801,8 @@ function showScoreboard() {
     row.className = 'score-row';
     row.innerHTML = `
       <span class="name">${t.name}</span>
-      ${BETS.map(b => `<span>${t[b.key] || '–'}</span>`).join('')}
-      <span class="total-earned">$${t.grand}</span>
+      ${BETS.map(b => `<span style="${b.value < 0 && t[b.key] ? 'color:var(--red)' : ''}">${t[b.key] || '–'}</span>`).join('')}
+      <span class="total-earned" style="${t.grand < 0 ? 'color:var(--red)' : ''}">${t.grand >= 0 ? '$' + t.grand : '-$' + Math.abs(t.grand)}</span>
     `;
     rows.appendChild(row);
   });
